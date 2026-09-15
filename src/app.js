@@ -8,9 +8,8 @@ const env = require('./config/env');
 const { notFoundHandler, errorHandler } = require('./middlewares/error.middleware');
 
 const authRoutes = require('./modules/auth/auth.routes');
-// Os módulos de categories e products entram aqui nos próximos passos:
-// const categoryRoutes = require('./modules/categories/category.routes');
-// const productRoutes = require('./modules/products/product.routes');
+const categoryRoutes = require('./modules/categories/category.routes');
+const productRoutes = require('./modules/products/product.routes');
 
 const app = express();
 
@@ -32,8 +31,8 @@ app.get('/api/health', (req, res) => {
 
 // ── Rotas ──────────────────────────────────────
 app.use('/api/auth', authRoutes);
-// app.use('/api/categories', categoryRoutes);
-// app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/products', productRoutes);
 
 // ── 404 + erros ────────────────────────────────
 app.use(notFoundHandler);
