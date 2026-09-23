@@ -7,9 +7,10 @@
 const logger = require('../utils/logger');
 
 class ApiError extends Error {
-  constructor(statusCode, message) {
+  constructor(statusCode, message, code = null) {
     super(message);
     this.statusCode = statusCode;
+    this.code = code;
   }
 }
 
@@ -32,6 +33,7 @@ function errorHandler(err, req, res, next) { // eslint-disable-line no-unused-va
 
   res.status(statusCode).json({
     success: false,
+    code: err.code || null,
     message: statusCode === 500 ? 'Erro interno do servidor.' : err.message,
   });
 }

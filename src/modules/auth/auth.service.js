@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const { query } = require('../../config/db');
 const env = require('../../config/env');
 const { ApiError } = require('../../middlewares/error.middleware');
+const logger = require('../../utils/logger');
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -22,26 +23,41 @@ function toPublicUser(row) {
 }
 
 async function register({ full_name, phone, email, password }, meta) {
-  const existing = await query(
-    'SELECT id FROM users WHERE email = $1 OR phone = $2',
-    [email, phone]
-  );
-  if (existing.rows.length > 0) {
-    throw new ApiError(409, 'Já existe uma conta com este email ou telemóvel.');
+  let stage = 'existing-user';
+
+  try {
+    const existing = await query(
+      'SELECT id FROM users WHERE email = $1 OR phone = $2',
+      [email, phone]
+    );
+    if (existing.rows.length > 0) {
+      throw new ApiError(409, 'Já existe uma conta com este email ou telemóvel.');
+    }
+
+    stage = 'password-hash';
+    const passwordHash = await bcrypt.hash(password, env.bcryptSaltRounds);
+
+    stage = 'insert-user';
+    const { rows } = await query(
+      `INSERT INTO users (full_name, phone, email, password_hash, role)
+       VALUES ($1, $2, $3, $4, 'customer')
+       RETURNING id, full_name, phone, email, role`,
+      [full_name, phone, email, passwordHash]
+    );
+
+    const user = rows[0];
+    stage = 'issue-tokens';
+    const tokens = await issueTokenPair(user, meta);
+    return { user: toPublicUser(user), ...tokens };
+  } catch (err) {
+      console.error(`[auth] Falha no registo na etapa ${stage}`, {
+      name: err.name,
+      code: err.code,
+      message: err.message,
+        stack: err.stack,
+    });
+    throw err;
   }
-
-  const passwordHash = await bcrypt.hash(password, env.bcryptSaltRounds);
-
-  const { rows } = await query(
-    `INSERT INTO users (full_name, phone, email, password_hash, role)
-     VALUES ($1, $2, $3, $4, 'customer')
-     RETURNING id, full_name, phone, email, role`,
-    [full_name, phone, email, passwordHash]
-  );
-
-  const user = rows[0];
-  const tokens = await issueTokenPair(user, meta);
-  return { user: toPublicUser(user), ...tokens };
 }
 
 async function login({ identifier, password }, meta) {

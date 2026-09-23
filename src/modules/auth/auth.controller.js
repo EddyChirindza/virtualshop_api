@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 const authService = require('./auth.service');
 const { registerSchema, loginSchema, refreshSchema } = require('./auth.validators');
+const logger = require('../../utils/logger');
 
 function requestMeta(req) {
   return { userAgent: req.headers['user-agent'], ip: req.ip };
@@ -18,6 +19,13 @@ async function register(req, res, next) {
       data: { user, token: accessToken, refreshToken },
     });
   } catch (err) {
+      console.error('[auth] Falha no registo', {
+      name: err.name,
+      code: err.code,
+      message: err.message,
+      issues: err.errors,
+        stack: err.stack,
+    });
     next(err);
   }
 }
