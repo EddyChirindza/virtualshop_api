@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────
 const productService = require('./product.service');
 const { ApiError } = require('../../middlewares/error.middleware');
+const { productListSchema } = require('./product.validators');
 
 async function popular(req, res, next) {
   try {
@@ -37,19 +38,17 @@ async function detail(req, res, next) {
 
 async function list(req, res, next) {
   try {
-    const categoryId = req.query.category_id ? Number(req.query.category_id) : undefined;
-    const page = req.query.page ? Number(req.query.page) : 1;
-    const pageSize = req.query.page_size ? Number(req.query.page_size) : 20;
-
-    if (categoryId !== undefined && (!Number.isInteger(categoryId) || categoryId <= 0)) {
-      throw new ApiError(400, 'category_id inválido.');
-    }
-    if (!Number.isInteger(page) || page < 1 || !Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
-      throw new ApiError(400, 'Parâmetros de paginação inválidos.');
-    }
-
-    const data = await productService.getAll({ categoryId, page, pageSize });
-    res.json({ success: true, message: 'OK', data });
+    const params = productListSchema.parse(req.query);
+    const result = await productService.getAll({
+      q: params.q || undefined,
+      categoryId: params.category ?? params.category_id,
+      minPrice: params.minPrice,
+      maxPrice: params.maxPrice,
+      sort: params.sort,
+      page: params.page ?? 1,
+      limit: params.limit ?? params.page_size ?? 20,
+    });
+    res.json({ success: true, message: 'OK', ...result });
   } catch (err) {
     next(err);
   }

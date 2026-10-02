@@ -7,12 +7,13 @@
 // ─────────────────────────────────────────────
 const { Router } = require('express');
 const controller = require('./product.controller');
+const { searchLimiter } = require('../../middlewares/rateLimiter');
 
 const router = Router();
 
 router.get('/popular', controller.popular);
 router.get('/new-arrivals', controller.newArrivals);
 router.get('/:id', controller.detail);
-router.get('/', controller.list);
+router.get('/', searchLimiter, controller.list);
 
 module.exports = router;

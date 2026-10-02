@@ -12,6 +12,7 @@ const categoryRoutes = require('./modules/categories/category.routes');
 const productRoutes = require('./modules/products/product.routes');
 const cartRoutes = require('./modules/cart/cart.routes');
 const orderRoutes = require('./modules/orders/order.routes');
+const favoriteRoutes = require('./modules/favorites/favorites.routes');
 
 const app = express();
 
@@ -72,6 +73,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/favorites', favoriteRoutes);
 
 // ── 404 + erros ────────────────────────────────
 app.use(notFoundHandler);

@@ -27,4 +27,14 @@ const registerLimiter = rateLimit({
   message: { success: false, message: 'Demasiados registos a partir deste IP. Tenta mais tarde.' },
 });
 
-module.exports = { loginLimiter, registerLimiter };
+// Pesquisa: no máx. 120 pedidos por IP a cada 15 min
+const searchLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: () => env.nodeEnv === 'development',
+  message: { success: false, message: 'Demasiadas pesquisas. Tenta novamente mais tarde.' },
+});
+
+module.exports = { loginLimiter, registerLimiter, searchLimiter };

@@ -35,26 +35,71 @@ async function getById(id) {
   return rows[0];
 }
 
-// Lista geral com filtro opcional por categoria e paginação — para uso futuro
-// (ex: ecrã de listagem completa do catálogo)
-async function getAll({ categoryId, page = 1, pageSize = 20 }) {
+async function getAll({ q, categoryId, minPrice, maxPrice, sort, page = 1, limit = 20 }) {
   const conditions = [];
   const params = [];
+  let categoryCte = '';
+  let searchOrderParams;
 
   if (categoryId) {
     params.push(categoryId);
-    conditions.push(`p.category_id = $${params.length}`);
+    categoryCte = `WITH RECURSIVE category_tree AS (
+      SELECT id FROM categories WHERE id = $${params.length}
+      UNION
+      SELECT c.id FROM categories c
+      JOIN category_tree parent ON c.parent_id = parent.id
+    )`;
+    conditions.push('p.category_id IN (SELECT id FROM category_tree)');
+  }
+
+  if (q) {
+    const escapedQuery = q.replace(/[\\%_]/g, '\\$&');
+    params.push(`${escapedQuery}%`);
+    const startsWithParam = `$${params.length}`;
+    params.push(`%${escapedQuery}%`);
+    const containsParam = `$${params.length}`;
+    searchOrderParams = { startsWithParam, containsParam };
+    conditions.push(`(p.name ILIKE ${startsWithParam} ESCAPE '\\' OR p.name ILIKE ${containsParam} ESCAPE '\\' OR p.description ILIKE ${containsParam} ESCAPE '\\')`);
+  }
+
+  if (minPrice !== undefined) {
+    params.push(minPrice);
+    conditions.push(`p.price >= $${params.length}`);
+  }
+
+  if (maxPrice !== undefined) {
+    params.push(maxPrice);
+    conditions.push(`p.price <= $${params.length}`);
   }
 
   const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-  const offset = (page - 1) * pageSize;
+  const filters = [...params];
+  const countResult = await query(
+    `${categoryCte} SELECT COUNT(*)::int AS total FROM products p ${whereClause}`,
+    filters
+  );
 
-  params.push(pageSize, offset);
+  const selectedSort = sort || (q ? 'relevance' : 'newest');
+  let orderBy = 'p.created_at DESC, p.id DESC';
+  if (selectedSort === 'price_asc') orderBy = 'p.price ASC, p.id DESC';
+  if (selectedSort === 'price_desc') orderBy = 'p.price DESC, p.id DESC';
+  if (selectedSort === 'relevance' && q) {
+    const { startsWithParam, containsParam } = searchOrderParams;
+    orderBy = `CASE WHEN p.name ILIKE ${startsWithParam} ESCAPE '\\' THEN 0
+                    WHEN p.name ILIKE ${containsParam} ESCAPE '\\' THEN 1
+                    ELSE 2 END, p.created_at DESC, p.id DESC`;
+  }
+
+  const offset = (page - 1) * limit;
+
+  params.push(limit, offset);
   const { rows } = await query(
-    `${BASE_SELECT} ${whereClause} ORDER BY p.id DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    `${categoryCte} ${BASE_SELECT} ${whereClause} ORDER BY ${orderBy} LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params
   );
-  return rows;
+
+  const total = countResult.rows[0].total;
+  return { data: rows, page, limit, total, totalPages: Math.ceil(total / limit) };
 }
 
 module.exports = { getPopular, getNewArrivals, getById, getAll };
