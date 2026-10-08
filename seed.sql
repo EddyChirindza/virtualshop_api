@@ -4,7 +4,11 @@
 INSERT INTO categories (name, slug, icon_url, parent_id) VALUES
     ('Frutas e Legumes', 'frutas-legumes', NULL, NULL),
     ('Padaria', 'padaria', NULL, NULL),
-    ('Bebidas', 'bebidas', NULL, NULL)
+    ('Bebidas', 'bebidas', NULL, NULL),
+    ('Eletrodomésticos', 'eletrodomesticos', NULL, NULL),
+    ('Alimentos', 'alimentos', NULL, NULL),
+    ('Cosméticos', 'cosmeticos', NULL, NULL),
+    ('Limpeza', 'limpeza', NULL, NULL)
 ON CONFLICT (slug) DO NOTHING;
 
 INSERT INTO categories (name, slug, icon_url, parent_id)
@@ -71,3 +75,51 @@ SELECT 'Cebola Roxa (kg)', 'Cebolas roxas com sabor forte.', 95.00, 65,
        'https://example.com/images/cebola.jpg', id, 4.1, true, false
 FROM categories WHERE slug = 'legumes'
 AND NOT EXISTS (SELECT 1 FROM products WHERE name = 'Cebola Roxa (kg)');
+
+INSERT INTO products (name, description, price, stock, image_url, category_id, rating, is_popular, is_new_arrival)
+SELECT 'Liquidificador 1.5L', 'Liquidificador com copo resistente e duas velocidades.', 12500.00, 15,
+       'https://example.com/images/liquidificador.jpg', id, 4.5, true, true
+FROM categories WHERE slug = 'eletrodomesticos'
+AND NOT EXISTS (SELECT 1 FROM products WHERE name = 'Liquidificador 1.5L');
+
+INSERT INTO products (name, description, price, stock, image_url, category_id, rating, is_popular, is_new_arrival)
+SELECT 'Ferro de Engomar a Vapor', 'Ferro a vapor com base antiaderente.', 8900.00, 20,
+       'https://example.com/images/ferro-engomar.jpg', id, 4.3, false, true
+FROM categories WHERE slug = 'eletrodomesticos'
+AND NOT EXISTS (SELECT 1 FROM products WHERE name = 'Ferro de Engomar a Vapor');
+
+INSERT INTO products (name, description, price, stock, image_url, category_id, rating, is_popular, is_new_arrival)
+SELECT 'Arroz Agulha 5kg', 'Arroz selecionado para refeições do dia a dia.', 1850.00, 60,
+       'https://example.com/images/arroz.jpg', id, 4.6, true, false
+FROM categories WHERE slug = 'alimentos'
+AND NOT EXISTS (SELECT 1 FROM products WHERE name = 'Arroz Agulha 5kg');
+
+INSERT INTO products (name, description, price, stock, image_url, category_id, rating, is_popular, is_new_arrival)
+SELECT 'Óleo de Girassol 1L', 'Óleo de girassol para cozinhar.', 950.00, 75,
+       'https://example.com/images/oleo-girassol.jpg', id, 4.2, false, true
+FROM categories WHERE slug = 'alimentos'
+AND NOT EXISTS (SELECT 1 FROM products WHERE name = 'Óleo de Girassol 1L');
+
+INSERT INTO products (name, description, price, stock, image_url, category_id, rating, is_popular, is_new_arrival)
+SELECT 'Champô Hidratante 400ml', 'Champô para limpeza e hidratação diária do cabelo.', 1650.00, 35,
+       'https://example.com/images/champo.jpg', id, 4.4, true, true
+FROM categories WHERE slug = 'cosmeticos'
+AND NOT EXISTS (SELECT 1 FROM products WHERE name = 'Champô Hidratante 400ml');
+
+INSERT INTO products (name, description, price, stock, image_url, category_id, rating, is_popular, is_new_arrival)
+SELECT 'Creme Hidratante Corporal 250ml', 'Creme corporal de uso diário.', 2100.00, 28,
+       'https://example.com/images/creme-corporal.jpg', id, 4.5, false, true
+FROM categories WHERE slug = 'cosmeticos'
+AND NOT EXISTS (SELECT 1 FROM products WHERE name = 'Creme Hidratante Corporal 250ml');
+
+INSERT INTO products (name, description, price, stock, image_url, category_id, rating, is_popular, is_new_arrival)
+SELECT 'Detergente para Roupa 2L', 'Detergente líquido para lavagem de roupa.', 2300.00, 40,
+       'https://example.com/images/detergente-roupa.jpg', id, 4.3, true, false
+FROM categories WHERE slug = 'limpeza'
+AND NOT EXISTS (SELECT 1 FROM products WHERE name = 'Detergente para Roupa 2L');
+
+INSERT INTO products (name, description, price, stock, image_url, category_id, rating, is_popular, is_new_arrival)
+SELECT 'Lixívia 1L', 'Lixívia para limpeza e desinfeção doméstica.', 550.00, 50,
+       'https://example.com/images/lixivia.jpg', id, 4.1, false, false
+FROM categories WHERE slug = 'limpeza'
+AND NOT EXISTS (SELECT 1 FROM products WHERE name = 'Lixívia 1L');

@@ -24,11 +24,12 @@ function toPublicUser(row) {
 
 async function register({ full_name, phone, email, password }, meta) {
   let stage = 'existing-user';
+  const normalizedEmail = email?.trim().toLowerCase() || null;
 
   try {
     const existing = await query(
-      'SELECT id FROM users WHERE email = $1 OR phone = $2',
-      [email, phone]
+      'SELECT id FROM users WHERE ($1::text IS NOT NULL AND email = $1) OR phone = $2',
+      [normalizedEmail, phone]
     );
     if (existing.rows.length > 0) {
       throw new ApiError(409, 'Já existe uma conta com este email ou telemóvel.');
@@ -42,7 +43,7 @@ async function register({ full_name, phone, email, password }, meta) {
       `INSERT INTO users (full_name, phone, email, password_hash, role)
        VALUES ($1, $2, $3, $4, 'customer')
        RETURNING id, full_name, phone, email, role`,
-      [full_name, phone, email, passwordHash]
+      [full_name, phone, normalizedEmail, passwordHash]
     );
 
     const user = rows[0];
@@ -77,6 +78,8 @@ async function login({ identifier, password }, meta) {
   if (!passwordMatches) {
     throw new ApiError(401, 'Credenciais inválidas.');
   }
+
+  await query('UPDATE users SET last_login_at = now() WHERE id = $1', [user.id]);
 
   const tokens = await issueTokenPair(user, meta);
   return { user: toPublicUser(user), ...tokens };

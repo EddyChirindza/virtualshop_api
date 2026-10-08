@@ -5,8 +5,18 @@ const { z } = require('zod');
 
 const registerSchema = z.object({
   full_name: z.string().trim().min(3, 'Nome demasiado curto.').max(150),
-  phone: z.string().trim().regex(/^\+?[0-9]{9,15}$/, 'Telemóvel inválido.'),
-  email: z.string().trim().toLowerCase().email('Email inválido.'),
+  phone: z
+    .string()
+    .trim()
+    .regex(
+      /^(?:[0-9]{9,15}|\+[1-9][0-9]{7,14})$/,
+      'Telemóvel inválido.',
+    ),
+  email: z.preprocess(
+    (value) =>
+      typeof value === 'string' && value.trim() === '' ? undefined : value,
+    z.string().trim().toLowerCase().email('Email inválido.').optional(),
+  ),
   password: z
     .string()
     .min(8, 'A password deve ter pelo menos 8 caracteres.')
